@@ -204,6 +204,7 @@ function App() {
           </h1>
           <p className="hero-subtitle">
             성취기준만 고르면 <strong>단원 설계안·차시 지도안·루브릭 평가지</strong>까지!
+            <br />
             전라북도교육청 연구학교 CREATE 6단계 모형 기반의 완성도 높은 생성형 AI 프롬프트와 구글 문서를 즉시 만듭니다.
           </p>
 

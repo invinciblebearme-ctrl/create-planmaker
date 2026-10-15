@@ -267,6 +267,7 @@ a {
   max-width: 760px;
   margin: 0 auto 20px;
   line-height: 1.7;
+  word-break: keep-all;
 }
 
 .hero-feature-chips {
