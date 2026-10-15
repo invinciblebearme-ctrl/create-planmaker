@@ -317,8 +317,9 @@ export function LessonConfigForm({
               value={customToolInput}
               onChange={(e) => setCustomToolInput(e.target.value)}
             />
-            <button type="submit" className="secondary-action-btn">
-              <Plus size={15} /> 도구 추가
+            <button type="submit" className="secondary-action-btn add-tool-submit-btn">
+              <Plus size={15} />
+              <span>도구 추가</span>
             </button>
           </form>
         </div>
