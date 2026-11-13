@@ -361,16 +361,27 @@ export function LessonConfigForm({
 
         {/* 메인 생성 버튼 */}
         <div className="generate-action-box">
-          <button
-            type="button"
-            className="main-generate-btn"
-            onClick={onGeneratePrompt}
-          >
-            <Sparkles size={20} className="sparkle-anim" />
-            <span>CREATE 모형 맞춤형 수업 설계 프롬프트 생성하기</span>
-          </button>
+          <div className="generate-btn-dual-row">
+            <button
+              type="button"
+              className="main-generate-btn"
+              onClick={() => onGeneratePrompt(false)}
+            >
+              <Sparkles size={20} className="sparkle-anim" />
+              <span>CREATE 수업 설계 프롬프트 생성하기</span>
+            </button>
+
+            <button
+              type="button"
+              className="main-jeonbuk-generate-btn"
+              onClick={() => onGeneratePrompt(true)}
+              title="create-chatbot의 학습된 RAG를 참고해 전북 AI로 즉시 지도안을 작성합니다"
+            >
+              <span>🏫 전북 AI로 만들기 (RAG 연동)</span>
+            </button>
+          </div>
           <small className="generate-subtext">
-            성취기준과 수업 조건을 분석하여 완성도 높은 2022 개정 맞춤 프롬프트를 즉시 생성합니다.
+            프롬프트를 복사해 Gemini·ChatGPT에서 열거나, create-chatbot의 RAG를 참고해 전북 AI로 즉시 지도안을 만들고 문서로 다운로드합니다.
           </small>
         </div>
       </div>

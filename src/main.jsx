@@ -44,6 +44,8 @@ function App() {
 
   // 모달 상태
   const [promptModalOpen, setPromptModalOpen] = useState(false);
+  const [autoStartJeonbuk, setAutoStartJeonbuk] = useState(false);
+  const [openSettingsOnMount, setOpenSettingsOnMount] = useState(false);
   const [docsModalOpen, setDocsModalOpen] = useState(false);
   const [guideModalOpen, setGuideModalOpen] = useState(false);
   const [helpModalOpen, setHelpModalOpen] = useState(false);
@@ -163,7 +165,7 @@ function App() {
   };
 
   // 프롬프트 생성
-  const handleGeneratePrompt = () => {
+  const handleGeneratePrompt = (startJeonbukAi = false, openSettings = false) => {
     const stds = allStandards.filter((item) => pickedCodes.includes(item.c));
     const prompt = generateCreatePrompt({
       stds,
@@ -180,8 +182,12 @@ function App() {
     });
 
     setGeneratedPrompt(prompt);
+    setAutoStartJeonbuk(Boolean(startJeonbukAi));
+    setOpenSettingsOnMount(Boolean(openSettings));
     setPromptModalOpen(true);
-    showToast('CREATE 맞춤형 수업 설계 프롬프트가 생성되었습니다! ✨');
+    if (!startJeonbukAi && !openSettings) {
+      showToast('CREATE 맞춤형 수업 설계 프롬프트가 생성되었습니다! ✨');
+    }
   };
 
   return (
@@ -191,6 +197,7 @@ function App() {
         onOpenGuide={() => setGuideModalOpen(true)}
         onOpenHelp={() => setHelpModalOpen(true)}
         onOpenDocs={() => setDocsModalOpen(true)}
+        onOpenAiSettings={() => handleGeneratePrompt(false, true)}
       />
 
       <main className="shell">
@@ -245,7 +252,18 @@ function App() {
       <PromptModal
         isOpen={promptModalOpen}
         promptText={generatedPrompt}
-        onClose={() => setPromptModalOpen(false)}
+        stds={allStandards.filter((item) => pickedCodes.includes(item.c))}
+        config={config}
+        autoStartJeonbuk={autoStartJeonbuk}
+        openSettingsOnMount={openSettingsOnMount}
+        onClearAutoStart={() => {
+          setAutoStartJeonbuk(false);
+          setOpenSettingsOnMount(false);
+        }}
+        onClose={() => {
+          setPromptModalOpen(false);
+          setOpenSettingsOnMount(false);
+        }}
         onOpenDocs={() => setDocsModalOpen(true)}
         onToast={showToast}
       />

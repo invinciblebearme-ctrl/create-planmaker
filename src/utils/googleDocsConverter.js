@@ -166,3 +166,183 @@ export async function copyDocsToClipboard(bodyHtml, rawText) {
   document.body.removeChild(tempDiv);
   return success;
 }
+
+function sanitizeFileName(name) {
+  return String(name || 'CREATE_모형_교수학습_지도안')
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .replace(/\s+/g, '_')
+    .slice(0, 80);
+}
+
+/**
+ * MS Word / 한컴오피스 한글 / 구글 문서 호환 서식 문서(.doc)로 즉시 다운로드
+ */
+export function downloadAsDoc(bodyHtml, title = 'CREATE_모형_교수학습_지도안') {
+  if (!bodyHtml) return false;
+  const fileName = `${sanitizeFileName(title)}.doc`;
+
+  const docHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<title>${escapeHtml(title)}</title>
+<!--[if gte mso 9]>
+<xml>
+  <w:WordDocument>
+    <w:View>Print</w:View>
+    <w:Zoom>100</w:Zoom>
+    <w:DoNotOptimizeForBrowser/>
+  </w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+  @page {
+    size: 21cm 29.7cm;
+    margin: 2cm 1.8cm 2cm 1.8cm;
+  }
+  body {
+    font-family: '맑은 고딕', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.6;
+    color: #222222;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 10pt 0;
+  }
+  th, td {
+    border: 1px solid #7a8fa6;
+    padding: 6pt 8pt;
+    vertical-align: top;
+    font-size: 10pt;
+  }
+  th {
+    background-color: #dfe8fb;
+    font-weight: bold;
+    text-align: center;
+    color: #183266;
+  }
+</style>
+</head>
+<body>
+  <div style="font-family:'맑은 고딕','Malgun Gothic','Noto Sans KR',sans-serif;font-size:10.5pt;color:#222;">
+    ${bodyHtml}
+  </div>
+</body>
+</html>`;
+
+  const blob = new Blob(['\ufeff', docHtml], {
+    type: 'application/msword;charset=utf-8'
+  });
+  triggerBlobDownload(blob, fileName);
+  return true;
+}
+
+/**
+ * 독립 실행형 웹 문서(.html) 다운로드
+ */
+export function downloadAsHtml(bodyHtml, title = 'CREATE_모형_교수학습_지도안') {
+  if (!bodyHtml) return false;
+  const fileName = `${sanitizeFileName(title)}.html`;
+
+  const fullHtml = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${escapeHtml(title)}</title>
+  <style>
+    body {
+      max-width: 900px;
+      margin: 32px auto;
+      padding: 0 24px 48px;
+      font-family: '맑은 고딕', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.65;
+      color: #222;
+      background: #fff;
+    }
+    @media print {
+      body { max-width: 100%; margin: 0; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  ${bodyHtml}
+</body>
+</html>`;
+
+  const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+  triggerBlobDownload(blob, fileName);
+  return true;
+}
+
+/**
+ * 마크다운(.md) 원문 파일 다운로드
+ */
+export function downloadAsMarkdown(markdown, title = 'CREATE_모형_교수학습_지도안') {
+  if (!markdown || !markdown.trim()) return false;
+  const fileName = `${sanitizeFileName(title)}.md`;
+  const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+  triggerBlobDownload(blob, fileName);
+  return true;
+}
+
+/**
+ * A4 인쇄 및 PDF 저장 대화상자 호출
+ */
+export function printAsPdf(bodyHtml, title = 'CREATE 모형 교수학습 지도안') {
+  if (!bodyHtml) return false;
+  const printWin = window.open('', '_blank', 'width=960,height=800');
+  if (!printWin) return false;
+
+  printWin.document.write(`<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>${escapeHtml(title)}</title>
+  <style>
+    @page { size: A4; margin: 16mm 14mm; }
+    body {
+      font-family: '맑은 고딕', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.6;
+      color: #222;
+      margin: 0;
+      padding: 16px;
+    }
+    table { page-break-inside: auto; border-collapse: collapse; width: 100%; }
+    tr { page-break-inside: avoid; page-break-after: auto; }
+    h2, h3 { page-break-after: avoid; }
+  </style>
+</head>
+<body>
+  ${bodyHtml}
+  <script>
+    window.onload = function() {
+      setTimeout(function() {
+        window.focus();
+        window.print();
+      }, 250);
+    };
+  </script>
+</body>
+</html>`);
+  printWin.document.close();
+  return true;
+}
+
+function triggerBlobDownload(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 200);
+}
