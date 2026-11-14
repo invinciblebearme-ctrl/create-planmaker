@@ -2346,6 +2346,90 @@ a {
   color: #3730a3;
 }
 
+.admin-lock-icon-btn {
+  margin-left: auto;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  color: #94a3b8;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.admin-lock-icon-btn:hover,
+.admin-lock-icon-btn.active {
+  color: #475569;
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+/* 관리자 PIN 잠금 게이트 */
+.admin-pin-gate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+}
+
+.pin-gate-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pin-lock-icon {
+  color: #475569;
+  flex-shrink: 0;
+}
+
+.pin-gate-left strong {
+  display: block;
+  font-size: 13.5px;
+  color: #1e293b;
+}
+
+.pin-gate-left p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.pin-gate-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pin-input-box {
+  width: 150px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.pin-error-msg {
+  width: 100%;
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #dc2626;
+}
+
+.settings-header-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .spin-icon {
   animation: spin 1s linear infinite;
 }

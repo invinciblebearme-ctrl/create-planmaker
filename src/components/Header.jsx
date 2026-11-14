@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { BookOpen, FileText, HelpCircle, Sparkles, ExternalLink, Menu, X, ArrowUpRight, KeyRound } from 'lucide-react';
+import { BookOpen, FileText, HelpCircle, Sparkles, ExternalLink, Menu, X, ArrowUpRight } from 'lucide-react';
 
-export function Header({ onOpenGuide, onOpenHelp, onOpenDocs, onOpenAiSettings }) {
+export function Header({ onOpenGuide, onOpenHelp, onOpenDocs }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -67,19 +67,6 @@ export function Header({ onOpenGuide, onOpenHelp, onOpenDocs, onOpenAiSettings }
           >
             <HelpCircle size={15} /> 사용법
           </button>
-          {onOpenAiSettings && (
-            <button
-              type="button"
-              className="nav-btn"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenAiSettings();
-              }}
-              title="전북 AI API 키 및 모델 변경"
-            >
-              <KeyRound size={15} /> 전북 AI 설정
-            </button>
-          )}
           <button
             type="button"
             className="nav-btn docs-btn"

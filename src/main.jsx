@@ -197,7 +197,6 @@ function App() {
         onOpenGuide={() => setGuideModalOpen(true)}
         onOpenHelp={() => setHelpModalOpen(true)}
         onOpenDocs={() => setDocsModalOpen(true)}
-        onOpenAiSettings={() => handleGeneratePrompt(false, true)}
       />
 
       <main className="shell">

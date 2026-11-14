@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Copy,
-  ExternalLink,
   Sparkles,
   Check,
   FileText,
@@ -10,13 +9,13 @@ import {
   Bot,
   Download,
   Printer,
-  Settings,
   RefreshCw,
   BookOpen,
   AlertCircle,
   Loader2,
   PlusCircle,
-  KeyRound,
+  Lock,
+  Unlock,
   Eye,
   Code
 } from 'lucide-react';
@@ -24,7 +23,6 @@ import {
   getJeonbukAiConfig,
   saveJeonbukAiConfig,
   resetJeonbukAiConfigToDefault,
-  maskApiKey,
   RECOMMENDED_MODELS,
   fetchAvailableGatewayModels,
   fetchCreateChatbotRag,
@@ -39,13 +37,15 @@ import {
   printAsPdf
 } from '../utils/googleDocsConverter';
 
+const ADMIN_PIN = '7703';
+const ADMIN_SESSION_KEY = 'create_planmaker_admin_unlocked';
+
 export function PromptModal({
   isOpen,
   promptText,
   stds = [],
   config = {},
   autoStartJeonbuk = false,
-  openSettingsOnMount = false,
   onClearAutoStart,
   onClose,
   onOpenDocs,
@@ -55,9 +55,14 @@ export function PromptModal({
   const [activeTab, setActiveTab] = useState('prompt'); // 'prompt' | 'ai-result'
   const [resultViewMode, setResultViewMode] = useState('preview'); // 'preview' | 'markdown'
 
-  // 전북 AI 설정 상태
+  // 관리자 잠금 및 전북 AI 설정 상태
   const [showSettings, setShowSettings] = useState(false);
-  const [showRawKey, setShowRawKey] = useState(false);
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(
+    () => sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true'
+  );
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [customKeyInput, setCustomKeyInput] = useState('');
   const [aiConfig, setAiConfig] = useState(() => getJeonbukAiConfig());
   const [gatewayModels, setGatewayModels] = useState(RECOMMENDED_MODELS);
   const [loadingModels, setLoadingModels] = useState(false);
@@ -77,19 +82,22 @@ export function PromptModal({
   // 모달 열릴 때 최신 설정 동기화
   useEffect(() => {
     if (isOpen) {
-      setAiConfig(getJeonbukAiConfig());
+      const loaded = getJeonbukAiConfig();
+      setAiConfig(loaded);
+      setCustomKeyInput(loaded.isCustomKey ? loaded.apiKey : '');
       setAiError('');
-      if (openSettingsOnMount) {
-        setShowSettings(true);
-      }
+      setPinInput('');
+      setPinError('');
     } else {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
       setIsGenerating(false);
       setShowSettings(false);
+      setPinInput('');
+      setPinError('');
     }
-  }, [isOpen, openSettingsOnMount]);
+  }, [isOpen]);
 
   // 메인 화면에서 [전북 AI로 바로 만들기]로 진입한 경우 자동 실행
   useEffect(() => {
@@ -165,31 +173,57 @@ export function PromptModal({
     }
   };
 
+  // 관리자 PIN 확인
+  const handleUnlockPin = (e) => {
+    e.preventDefault();
+    if (pinInput.trim() === ADMIN_PIN) {
+      setIsAdminUnlocked(true);
+      sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
+      setPinInput('');
+      setPinError('');
+      onToast('관리자 설정 잠금이 해제되었습니다 🔓');
+    } else {
+      setPinError('관리자 비밀번호가 올바르지 않습니다.');
+    }
+  };
+
+  const handleLockAdmin = () => {
+    setIsAdminUnlocked(false);
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    setShowSettings(false);
+    setPinInput('');
+    setPinError('');
+    onToast('관리자 설정을 다시 잠갔습니다 🔒');
+  };
+
   // API 키 및 설정 저장
   const handleSaveSettings = (e) => {
     if (e) e.preventDefault();
-    const saved = saveJeonbukAiConfig(aiConfig);
+    const payload = {
+      ...aiConfig,
+      apiKey: customKeyInput.trim() // 비어 있으면 기본 내장 키로 자동 설정됨
+    };
+    const saved = saveJeonbukAiConfig(payload);
     setAiConfig(saved);
+    setCustomKeyInput(saved.isCustomKey ? saved.apiKey : '');
     setShowSettings(false);
-    onToast('전북 AI API 설정이 저장되었습니다 ✨');
+    onToast('전북 AI 설정이 저장되었습니다 ✨');
   };
 
   // 기본 내장 API 키로 복원
   const handleResetDefaultConfig = () => {
     const def = resetJeonbukAiConfigToDefault();
     setAiConfig(def);
+    setCustomKeyInput('');
     onToast('기본 내장 전북 AI API 키 및 설정으로 복원되었습니다 🔄');
   };
 
   // 게이트웨이 지원 모델 목록 불러오기
   const handleFetchModels = async () => {
-    if (!aiConfig.apiKey.trim()) {
-      onToast('먼저 API 키를 입력해 주세요.');
-      return;
-    }
     setLoadingModels(true);
     try {
-      const list = await fetchAvailableGatewayModels(aiConfig.apiKey, aiConfig.baseUrl);
+      const keyToUse = customKeyInput.trim() || aiConfig.apiKey;
+      const list = await fetchAvailableGatewayModels(keyToUse, aiConfig.baseUrl);
       if (list.length > 0) {
         setGatewayModels(list);
         onToast(`전북 AI 게이트웨이에서 ${list.length}개 모델 목록을 불러왔습니다.`);
@@ -205,8 +239,7 @@ export function PromptModal({
 
   // 전북 AI로 지도안 생성 실행 (create-chatbot RAG 연동)
   const handleRunJeonbukAi = async (isContinue = false) => {
-    // 현재 입력창에 입력된 설정이 있으면 즉시 반영
-    const latestConfig = saveJeonbukAiConfig(aiConfig);
+    const latestConfig = getJeonbukAiConfig();
     setAiConfig(latestConfig);
 
     if (abortControllerRef.current) {
@@ -254,9 +287,6 @@ export function PromptModal({
         onToast('지도안 생성을 중지했습니다.');
       } else {
         setAiError(err.message || '전북 AI 호출 중 오류가 발생했습니다.');
-        if (err.code === 'MISSING_API_KEY' || String(err.message).includes('401') || String(err.message).includes('API 키')) {
-          setShowSettings(true);
-        }
       }
     } finally {
       setIsGenerating(false);
@@ -391,55 +421,96 @@ export function PromptModal({
 
             <button
               type="button"
-              className={`secondary-action-btn api-settings-toggle-btn ${showSettings ? 'active' : ''}`}
-              onClick={() => setShowSettings((prev) => !prev)}
-              title="전북 AI API 키 및 모델 설정"
+              className={`admin-lock-icon-btn ${showSettings ? 'active' : ''}`}
+              onClick={() => {
+                setShowSettings((prev) => !prev);
+                setPinError('');
+              }}
+              title="관리자 전용 설정"
+              aria-label="관리자 전용 설정"
             >
-              <KeyRound size={15} />
-              <span>API 키 설정 ({aiConfig.isCustomKey ? '사용자 키' : '기본 키 적용됨'})</span>
+              {isAdminUnlocked ? <Unlock size={15} /> : <Lock size={15} />}
             </button>
           </div>
 
-          {/* 전북 AI API 키 및 RAG 연동 설정 패널 */}
-          {showSettings && (
-            <form className="jeonbuk-settings-panel" onSubmit={handleSaveSettings}>
-              <div className="settings-panel-header">
+          {/* 관리자 전용 잠금 화면 또는 전북 AI 설정 패널 */}
+          {showSettings && !isAdminUnlocked && (
+            <form className="admin-pin-gate" onSubmit={handleUnlockPin}>
+              <div className="pin-gate-left">
+                <Lock size={18} className="pin-lock-icon" />
                 <div>
-                  <strong>⚙️ 전북 AI (API Gateway) 및 create-chatbot RAG 연결 설정</strong>
-                  <p>
-                    기본 API 키(<code>{maskApiKey(aiConfig.apiKey)}</code>)가 내장되어 있어 바로 사용할 수 있으며, 새로 발급받은 API 키(<code>baze_...</code>)로 언제든 변경할 수 있습니다.
-                  </p>
+                  <strong>🔒 관리자 전용 설정 (비밀번호 보호됨)</strong>
+                  <p>전북 AI API 키 및 모델 설정은 관리자만 열람·변경할 수 있습니다.</p>
                 </div>
+              </div>
+              <div className="pin-gate-right">
+                <input
+                  type="password"
+                  className="text-input pin-input-box"
+                  placeholder="관리자 PIN 입력"
+                  value={pinInput}
+                  onChange={(e) => {
+                    setPinInput(e.target.value);
+                    setPinError('');
+                  }}
+                  maxLength={12}
+                  autoFocus
+                />
+                <button type="submit" className="primary-action-btn">
+                  확인
+                </button>
                 <button
                   type="button"
-                  className="text-close-btn"
+                  className="secondary-action-btn"
                   onClick={() => setShowSettings(false)}
                 >
                   닫기
                 </button>
               </div>
+              {pinError && <p className="pin-error-msg">{pinError}</p>}
+            </form>
+          )}
+
+          {showSettings && isAdminUnlocked && (
+            <form className="jeonbuk-settings-panel" onSubmit={handleSaveSettings}>
+              <div className="settings-panel-header">
+                <div>
+                  <strong>⚙️ [관리자 전용] 전북 AI (API Gateway) 및 create-chatbot RAG 설정</strong>
+                  <p>
+                    현재 <strong>{aiConfig.isCustomKey ? '사용자 지정 API 키' : '기본 내장 API 키(암호화 보호됨)'}</strong>가 적용되어 있습니다. 새 키를 입력해 변경하거나 기본값으로 복원할 수 있습니다.
+                  </p>
+                </div>
+                <div className="settings-header-btns">
+                  <button
+                    type="button"
+                    className="secondary-action-btn"
+                    onClick={handleLockAdmin}
+                    title="관리자 설정 다시 잠그기"
+                  >
+                    <Lock size={13} /> 잠금
+                  </button>
+                  <button
+                    type="button"
+                    className="text-close-btn"
+                    onClick={() => setShowSettings(false)}
+                  >
+                    닫기
+                  </button>
+                </div>
+              </div>
 
               <div className="settings-grid">
                 <div className="settings-field span-2">
-                  <label className="label-with-action">
-                    <span>
-                      🔑 전북 AI API Key ({aiConfig.isCustomKey ? '사용자 변경 키' : '기본 내장 키 사용 중'})
-                    </span>
-                    <button
-                      type="button"
-                      className="mini-link-btn"
-                      onClick={() => setShowRawKey((v) => !v)}
-                    >
-                      {showRawKey ? '키 숨기기' : '키 보기'}
-                    </button>
+                  <label>
+                    🔑 새 전북 AI API Key 변경 ({aiConfig.isCustomKey ? '현재: 사용자 지정 키 적용 중' : '현재: 기본 내장 키 자동 사용 중'})
                   </label>
                   <input
-                    type={showRawKey ? 'text' : 'password'}
+                    type="password"
                     className="text-input"
-                    placeholder="새로 발급받은 API 키 입력 (비워두면 기본 내장 키 사용)"
-                    value={aiConfig.apiKey}
-                    onChange={(e) => setAiConfig({ ...aiConfig, apiKey: e.target.value })}
-                    autoComplete="off"
+                    placeholder="변경할 새 API 키 입력 (비워두면 기본 내장 키가 사용됩니다)"
+                    value={customKeyInput}
+                    onChange={(e) => setCustomKeyInput(e.target.value)}
+                    autoComplete="new-password"
                   />
                 </div>
 
@@ -506,7 +577,7 @@ export function PromptModal({
 
               <div className="settings-panel-footer">
                 <span className="settings-hint">
-                  💡 <code>developer_docs.md</code> 규격(<code>/v1/gateway/chat/completions/</code>) 및 스트리밍(SSE)이 적용됩니다.
+                  💡 기본 내장 API 키는 외부에 평문으로 노출되지 않도록 보호됩니다.
                 </span>
                 <div className="settings-btn-group">
                   <button
@@ -519,18 +590,6 @@ export function PromptModal({
                   </button>
                   <button type="submit" className="primary-action-btn">
                     <Check size={15} /> 설정 저장
-                  </button>
-                  <button
-                    type="button"
-                    className="jeonbuk-ai-btn"
-                    onClick={() => {
-                      const saved = saveJeonbukAiConfig(aiConfig);
-                      setAiConfig(saved);
-                      setShowSettings(false);
-                      handleRunJeonbukAi(false);
-                    }}
-                  >
-                    <Bot size={15} /> 저장 후 바로 전북 AI로 만들기
                   </button>
                 </div>
               </div>
@@ -619,13 +678,6 @@ export function PromptModal({
                     <p>{aiError}</p>
                   </div>
                   <div className="error-actions">
-                    <button
-                      type="button"
-                      className="secondary-action-btn"
-                      onClick={() => setShowSettings(true)}
-                    >
-                      <KeyRound size={14} /> API 키 설정
-                    </button>
                     <button
                       type="button"
                       className="primary-action-btn"
