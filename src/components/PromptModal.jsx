@@ -410,7 +410,7 @@ export function PromptModal({
                 </>
               ) : (
                 <>
-                  <Bot size={17} /> 🏫 전북 AI로 만들기 (RAG 연동)
+                  <Bot size={17} /> 🏫 전북 AI로 지도안 바로 만들기
                 </>
               )}
             </button>
@@ -601,8 +601,8 @@ export function PromptModal({
             <>
               <div className="prompt-tips-row">
                 <div className="tip-bubble">
-                  💡 <strong>작성 꿀팁:</strong> 상단의 <strong>[🏫 전북 AI로 만들기]</strong>를 누르면{' '}
-                  <code>create-chatbot</code>의 연구학교 RAG 자료를 참고해 이 화면에서 바로 지도안을 완성하고 문서로 다운로드할 수 있습니다!
+                  💡 <strong>작성 꿀팁:</strong> 상단의 <strong>[🏫 전북 AI로 지도안 바로 만들기]</strong>를 누르면{' '}
+                  <code>create-chatbot</code>의 연구학교 RAG 자료와 생성된 프롬프트를 이용해 이 화면에서 바로 지도안을 완성하고 문서로 다운로드할 수 있습니다!
                 </div>
                 <button
                   type="button"
@@ -785,7 +785,7 @@ export function PromptModal({
                         <p>${
                           isGenerating
                             ? '전북 AI가 create-chatbot의 학습된 RAG 자료와 생성된 설계 프롬프트를 바탕으로 지도안을 작성 중입니다...'
-                            : '상단의 [🏫 전북 AI로 만들기] 버튼을 누르면 이곳에 완성된 수업 지도안이 출력됩니다.'
+                            : '상단의 [🏫 전북 AI로 지도안 바로 만들기] 버튼을 누르면 이곳에 완성된 수업 지도안이 출력됩니다.'
                         }</p>
                       </div>`
                   }}
@@ -806,7 +806,7 @@ export function PromptModal({
           <span className="footer-hint">
             {activeTab === 'ai-result' && modelUsedLabel
               ? `⚡ 생성 모델: ${modelUsedLabel} · 생성된 지도안은 [문서(.doc) 다운로드] 또는 [구글 문서 변환기]에서 바로 저장할 수 있습니다.`
-              : '💡 [🏫 전북 AI로 만들기]를 클릭하면 create-chatbot의 학습된 RAG를 참고하여 즉시 지도안을 생성합니다.'}
+              : '💡 [🏫 전북 AI로 지도안 바로 만들기]를 클릭하면 create-chatbot의 학습된 RAG와 프롬프트를 이용해 즉시 지도안을 생성합니다.'}
           </span>
           <div className="modal-footer-btns">
             {aiMarkdown.trim() && (

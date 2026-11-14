@@ -375,9 +375,9 @@ export function LessonConfigForm({
               type="button"
               className="main-jeonbuk-generate-btn"
               onClick={() => onGeneratePrompt(true)}
-              title="create-chatbot의 학습된 RAG를 참고해 전북 AI로 즉시 지도안을 작성합니다"
+              title="create-chatbot의 학습된 RAG와 생성된 프롬프트를 이용해 전북 AI로 즉시 지도안을 작성합니다"
             >
-              <span>🏫 전북 AI로 만들기 (RAG 연동)</span>
+              <span>🏫 전북 AI로 지도안 바로 만들기</span>
             </button>
           </div>
           <small className="generate-subtext">
