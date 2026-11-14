@@ -268,7 +268,7 @@ export function PromptModal({
       }
 
       // 2단계: 전북 AI API Gateway 호출 (스트리밍)
-      setGenerationStep('✍️ 전북 AI가 create-chatbot RAG 자료와 성취기준을 바탕으로 지도안을 작성하고 있습니다...');
+      setGenerationStep('✍️ 전북 AI가 create-chatbot의 학습된 RAG 자료와 생성된 설계 프롬프트를 바탕으로 지도안을 작성하고 있습니다...');
       const res = await generatePlanWithJeonbukAi({
         promptText,
         ragResults: latestConfig.useRag ? currentRagResults : [],
@@ -784,7 +784,7 @@ export function PromptModal({
                         <span>🏫</span>
                         <p>${
                           isGenerating
-                            ? '전북 AI가 create-chatbot의 학습된 RAG를 참고하여 지도안을 작성 중입니다...'
+                            ? '전북 AI가 create-chatbot의 학습된 RAG 자료와 생성된 설계 프롬프트를 바탕으로 지도안을 작성 중입니다...'
                             : '상단의 [🏫 전북 AI로 만들기] 버튼을 누르면 이곳에 완성된 수업 지도안이 출력됩니다.'
                         }</p>
                       </div>`
